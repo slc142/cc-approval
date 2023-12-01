@@ -3,6 +3,8 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from sklearn.feature_selection import chi2
+from scipy.stats import chi2_contingency
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
@@ -57,6 +59,9 @@ def eda(data):
     plt.show()
 
     sns.countplot(x="gender", data=df)
+    plt.show()
+
+    sns.countplot(x="ethnicity", data=df)
     plt.show()
 
     df = df.replace("?", np.nan)
@@ -141,7 +146,12 @@ def view_model():
     print(clf.intercept_)
 
     coefs_df = pd.DataFrame({"Features": features[:-1], "Coefficients": clf.coef_[0]})
-    sns.barplot(x="Coefficients", y="Features", data=coefs_df)
+    sns.barplot(
+        x="Coefficients",
+        y="Features",
+        data=coefs_df,
+        order=coefs_df.sort_values("Coefficients").Features,
+    )
     plt.xlabel("Coefficient value")
     plt.ylabel("Feature")
     plt.title("Coefficients of Logistic Regression Model")
@@ -151,7 +161,22 @@ def view_model():
     return clf
 
 
-view_model()
+# view_model()
+
+
+def chi_squared(feature="ethnicity"):
+    label_encoder = LabelEncoder()
+    data["ethnicity_encoded"] = label_encoder.fit_transform(data[feature])
+    data["approval_encoded"] = label_encoder.fit_transform(data["approvalStatus"])
+    contingency_table = pd.crosstab(data["ethnicity_encoded"], data["approval_encoded"])
+    chi2, p, dof, expected = chi2_contingency(contingency_table)
+    print(f"Chi-squared statistic: {chi2}")
+    print(f"p-value: {p}")
+    print(f"Degrees of freedom: {dof}")
+    print(f"Expected frequencies:\n{expected}")
+
+
+chi_squared()
 
 # train a random forest classifier
 # clf = RandomForestClassifier(n_estimators=100, random_state=42)
