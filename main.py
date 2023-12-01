@@ -13,14 +13,12 @@ from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
 
 data = pd.read_csv("clean_dataset.csv")
-print(data.head())
 features = [
     "Gender",
     "Age",
     "Debt",
     "Married",
     "BankCustomer",
-    # "EducationLevel",
     "Industry",
     "Ethnicity",
     "YearsEmployed",
@@ -35,71 +33,66 @@ features = [
 ]
 
 
-# encode categorical features
-def encode_labels(df):
-    for c in df.columns:
-        if df[c].dtype == "object":
-            lbl = LabelEncoder()
-            lbl.fit(list(df[c].values))
-            df[c] = lbl.transform(df[c].values)
-    return df
-
-
 def eda(data):
     df = data.copy()
-    print(df.head())
-    print(df.shape)
-    print(data.dtypes)
+    # print(df.head())
+    # print(df.shape)
+    # print(data.dtypes)
 
-    sns.countplot(x="Approved", data=df)
-    plt.show()
+    # sns.countplot(x="Approved", data=df)
+    # plt.show()
 
-    sns.countplot(x="Gender", data=df)
-    plt.show()
+    # sns.countplot(x="Gender", data=df)
+    # plt.show()
 
-    sns.countplot(x="Ethnicity", data=df)
-    plt.show()
+    # sns.countplot(x="Ethnicity", data=df)
+    # plt.show()
 
-    df = df.replace("?", np.nan)
-    df["Age"] = df["Age"].astype(float)
+    # sns.pairplot(
+    #     df,
+    #     vars=["Age", "Debt", "Income", "YearsEmployed", "CreditScore"],
+    #     hue="Approved",
+    # )
+    # plt.show()
 
-    sns.pairplot(
-        df,
-        vars=["Age", "Debt", "Income", "YearsEmployed", "CreditScore"],
-        hue="Approved",
-    )
-    plt.show()
+    df = pd.get_dummies(df, columns=["Ethnicity", "Industry", "Citizen"])
 
-    df = encode_labels(df)
     df = df[
         [
-            "Approved",
-            "Gender",
             "Age",
+            "Ethnicity_White",
+            "Ethnicity_Black",
+            "Citizen_ByBirth",
             "Debt",
-            "Income",
+            "Married",
+            "BankCustomer",
             "YearsEmployed",
-            "CreditScore",
             "PriorDefault",
             "Employed",
+            "CreditScore",
             "DriversLicense",
-            "Married",
+            # "ZipCode",
+            "Income",
+            "Approved",
         ]
     ]
 
     corr = df.corr(numeric_only=True)
     sns.heatmap(corr, annot=True, cmap="coolwarm")
+    # plt.tight_layout()
     plt.show()
 
 
-# eda(data)
+eda(data)
 
 
 def data_prep(data):
     # drop rows with missing values
     data = data.dropna()
 
-    data = encode_labels(data)
+    # convert ethnicity to binary variables
+    data = pd.get_dummies(data, columns=["Ethnicity", "Industry", "Citizen"])
+    # print(data.head())
 
     trainX, testX, trainY, testY = train_test_split(
         data.drop(["Approved"], axis=1),
@@ -116,7 +109,7 @@ def data_prep(data):
     return trainX, testX, trainY, testY
 
 
-trainX, testX, trainY, testY = data_prep(data)
+# trainX, testX, trainY, testY = data_prep(data)
 
 
 def logistic_regression(trainX, testX, trainY, testY):
@@ -130,7 +123,7 @@ def logistic_regression(trainX, testX, trainY, testY):
         pickle.dump(clf, f)
 
 
-logistic_regression(trainX, testX, trainY, testY)
+# logistic_regression(trainX, testX, trainY, testY)
 
 
 def view_model():
@@ -155,7 +148,7 @@ def view_model():
     return clf
 
 
-view_model()
+# view_model()
 
 
 def chi_squared(feature="Ethnicity"):
@@ -170,7 +163,7 @@ def chi_squared(feature="Ethnicity"):
     print(f"Expected frequencies:\n{expected}")
 
 
-chi_squared()
+# chi_squared()
 
 # train a random forest classifier
 # clf = RandomForestClassifier(n_estimators=100, random_state=42)
