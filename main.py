@@ -3,7 +3,6 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
-from sklearn.feature_selection import chi2
 from scipy.stats import chi2_contingency
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import MinMaxScaler
@@ -13,30 +12,27 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
 
-data = pd.read_csv("cc_approvals.csv", header=None)
+data = pd.read_csv("clean_dataset.csv")
+print(data.head())
 features = [
-    "gender",
-    "age",
-    "debt",
-    "married",
-    "bankCustomer",
-    "educationLevel",
-    "ethnicity",
-    "yearsEmployed",
-    "priorDefault",
-    "employed",
-    "creditScore",
-    "driversLicense",
-    "citizen",
-    "zipCode",
-    "income",
-    "approvalStatus",
+    "Gender",
+    "Age",
+    "Debt",
+    "Married",
+    "BankCustomer",
+    # "EducationLevel",
+    "Industry",
+    "Ethnicity",
+    "YearsEmployed",
+    "PriorDefault",
+    "Employed",
+    "CreditScore",
+    "DriversLicense",
+    "Citizen",
+    "ZipCode",
+    "Income",
+    "Approved",
 ]
-# add feature labels to the dataframe
-data.columns = features
-
-# map approvalStatus column values + to 1 and - to 0
-data["approvalStatus"] = data["approvalStatus"].map({"+": 1, "-": 0})
 
 
 # encode categorical features
@@ -55,39 +51,39 @@ def eda(data):
     print(df.shape)
     print(data.dtypes)
 
-    sns.countplot(x="approvalStatus", data=df)
+    sns.countplot(x="Approved", data=df)
     plt.show()
 
-    sns.countplot(x="gender", data=df)
+    sns.countplot(x="Gender", data=df)
     plt.show()
 
-    sns.countplot(x="ethnicity", data=df)
+    sns.countplot(x="Ethnicity", data=df)
     plt.show()
 
     df = df.replace("?", np.nan)
-    df["age"] = df["age"].astype(float)
+    df["Age"] = df["Age"].astype(float)
 
     sns.pairplot(
         df,
-        vars=["age", "debt", "income", "yearsEmployed", "creditScore"],
-        hue="approvalStatus",
+        vars=["Age", "Debt", "Income", "YearsEmployed", "CreditScore"],
+        hue="Approved",
     )
     plt.show()
 
     df = encode_labels(df)
     df = df[
         [
-            "approvalStatus",
-            "gender",
-            "age",
-            "debt",
-            "income",
-            "yearsEmployed",
-            "creditScore",
-            "priorDefault",
-            "employed",
-            "driversLicense",
-            "married",
+            "Approved",
+            "Gender",
+            "Age",
+            "Debt",
+            "Income",
+            "YearsEmployed",
+            "CreditScore",
+            "PriorDefault",
+            "Employed",
+            "DriversLicense",
+            "Married",
         ]
     ]
 
@@ -96,20 +92,20 @@ def eda(data):
     plt.show()
 
 
-# eda(data)
+eda(data)
 
 
 def data_prep(data):
     data = data.replace("?", np.nan)
-    data["age"] = data["age"].astype(float)
+    data["Age"] = data["Age"].astype(float)
     # drop rows with missing values
     data = data.dropna()
 
     data = encode_labels(data)
 
     trainX, testX, trainY, testY = train_test_split(
-        data.drop(["approvalStatus"], axis=1),
-        data["approvalStatus"],
+        data.drop(["Approved"], axis=1),
+        data["Approved"],
         test_size=0.2,
         random_state=42,
     )
@@ -164,11 +160,11 @@ def view_model():
 # view_model()
 
 
-def chi_squared(feature="ethnicity"):
+def chi_squared(feature="Ethnicity"):
     label_encoder = LabelEncoder()
-    data["ethnicity_encoded"] = label_encoder.fit_transform(data[feature])
-    data["approval_encoded"] = label_encoder.fit_transform(data["approvalStatus"])
-    contingency_table = pd.crosstab(data["ethnicity_encoded"], data["approval_encoded"])
+    data["Ethnicity_encoded"] = label_encoder.fit_transform(data[feature])
+    data["approval_encoded"] = label_encoder.fit_transform(data["Approved"])
+    contingency_table = pd.crosstab(data["Ethnicity_encoded"], data["approval_encoded"])
     chi2, p, dof, expected = chi2_contingency(contingency_table)
     print(f"Chi-squared statistic: {chi2}")
     print(f"p-value: {p}")
@@ -176,7 +172,7 @@ def chi_squared(feature="ethnicity"):
     print(f"Expected frequencies:\n{expected}")
 
 
-chi_squared()
+# chi_squared()
 
 # train a random forest classifier
 # clf = RandomForestClassifier(n_estimators=100, random_state=42)
