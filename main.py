@@ -83,7 +83,7 @@ def eda(data):
     plt.show()
 
 
-eda(data)
+# eda(data)
 
 
 def data_prep(data):
@@ -92,7 +92,6 @@ def data_prep(data):
 
     # convert ethnicity to binary variables
     data = pd.get_dummies(data, columns=["Ethnicity", "Industry", "Citizen"])
-    # print(data.head())
 
     trainX, testX, trainY, testY = train_test_split(
         data.drop(["Approved"], axis=1),
@@ -126,13 +125,19 @@ def logistic_regression(trainX, testX, trainY, testY):
 # logistic_regression(trainX, testX, trainY, testY)
 
 
-def view_model():
+def view_model(data=data):
     with open("logistic.pkl", "rb") as f:
         clf = pickle.load(f)
     print(clf.coef_)
     print(clf.intercept_)
 
-    coefs_df = pd.DataFrame({"Features": features[:-1], "Coefficients": clf.coef_[0]})
+    data = data.dropna()
+    data = pd.get_dummies(data, columns=["Ethnicity", "Industry", "Citizen"])
+    # print(data.columns[0:-1])
+
+    coefs_df = pd.DataFrame(
+        {"Features": data.columns[0:-1], "Coefficients": clf.coef_[0]}
+    )
     sns.barplot(
         x="Coefficients",
         y="Features",
@@ -152,10 +157,8 @@ def view_model():
 
 
 def chi_squared(feature="Ethnicity"):
-    label_encoder = LabelEncoder()
-    data["Ethnicity_encoded"] = label_encoder.fit_transform(data[feature])
-    data["approval_encoded"] = label_encoder.fit_transform(data["Approved"])
-    contingency_table = pd.crosstab(data["Ethnicity_encoded"], data["approval_encoded"])
+    contingency_table = pd.crosstab(data[feature], data["Approved"])
+    print(contingency_table)
     chi2, p, dof, expected = chi2_contingency(contingency_table)
     print(f"Chi-squared statistic: {chi2}")
     print(f"p-value: {p}")
