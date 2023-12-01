@@ -3,6 +3,7 @@ import numpy as np
 import pandas as pd
 import seaborn as sns
 import matplotlib.pyplot as plt
+from scipy.stats import chi2_contingency
 from sklearn.preprocessing import LabelEncoder
 from sklearn.preprocessing import MinMaxScaler
 from sklearn.model_selection import train_test_split
@@ -11,83 +12,74 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.metrics import accuracy_score
 from sklearn.metrics import confusion_matrix
 
-data = pd.read_csv("cc_approvals.csv", header=None)
+data = pd.read_csv("clean_dataset.csv")
 features = [
-    "gender",
-    "age",
-    "debt",
-    "married",
-    "bankCustomer",
-    "educationLevel",
-    "ethnicity",
-    "yearsEmployed",
-    "priorDefault",
-    "employed",
-    "creditScore",
-    "driversLicense",
-    "citizen",
-    "zipCode",
-    "income",
-    "approvalStatus",
+    "Gender",
+    "Age",
+    "Debt",
+    "Married",
+    "BankCustomer",
+    "Industry",
+    "Ethnicity",
+    "YearsEmployed",
+    "PriorDefault",
+    "Employed",
+    "CreditScore",
+    "DriversLicense",
+    "Citizen",
+    "ZipCode",
+    "Income",
+    "Approved",
 ]
-# add feature labels to the dataframe
-data.columns = features
-
-# map approvalStatus column values + to 1 and - to 0
-data["approvalStatus"] = data["approvalStatus"].map({"+": 1, "-": 0})
-
-
-# encode categorical features
-def encode_labels(df):
-    for c in df.columns:
-        if df[c].dtype == "object":
-            lbl = LabelEncoder()
-            lbl.fit(list(df[c].values))
-            df[c] = lbl.transform(df[c].values)
-    return df
 
 
 def eda(data):
     df = data.copy()
-    print(df.head())
-    print(df.shape)
-    print(data.dtypes)
+    # print(df.head())
+    # print(df.shape)
+    # print(data.dtypes)
 
-    sns.countplot(x="approvalStatus", data=df)
-    plt.show()
+    # sns.countplot(x="Approved", data=df)
+    # plt.show()
 
-    sns.countplot(x="gender", data=df)
-    plt.show()
+    # sns.countplot(x="Gender", data=df)
+    # plt.show()
 
-    df = df.replace("?", np.nan)
-    df["age"] = df["age"].astype(float)
+    # sns.countplot(x="Ethnicity", data=df)
+    # plt.show()
 
-    sns.pairplot(
-        df,
-        vars=["age", "debt", "income", "yearsEmployed", "creditScore"],
-        hue="approvalStatus",
-    )
-    plt.show()
+    # sns.pairplot(
+    #     df,
+    #     vars=["Age", "Debt", "Income", "YearsEmployed", "CreditScore"],
+    #     hue="Approved",
+    # )
+    # plt.show()
 
-    df = encode_labels(df)
+    df = pd.get_dummies(df, columns=["Ethnicity", "Industry", "Citizen"])
+
     df = df[
         [
-            "approvalStatus",
-            "gender",
-            "age",
-            "debt",
-            "income",
-            "yearsEmployed",
-            "creditScore",
-            "priorDefault",
-            "employed",
-            "driversLicense",
-            "married",
+            "Age",
+            "Ethnicity_White",
+            "Ethnicity_Black",
+            "Citizen_ByBirth",
+            "Debt",
+            "Married",
+            "BankCustomer",
+            "YearsEmployed",
+            "PriorDefault",
+            "Employed",
+            "CreditScore",
+            "DriversLicense",
+            # "ZipCode",
+            "Income",
+            "Approved",
         ]
     ]
 
     corr = df.corr(numeric_only=True)
     sns.heatmap(corr, annot=True, cmap="coolwarm")
+    # plt.tight_layout()
     plt.show()
 
 
@@ -95,16 +87,15 @@ def eda(data):
 
 
 def data_prep(data):
-    data = data.replace("?", np.nan)
-    data["age"] = data["age"].astype(float)
     # drop rows with missing values
     data = data.dropna()
 
-    data = encode_labels(data)
+    # convert ethnicity to binary variables
+    data = pd.get_dummies(data, columns=["Ethnicity", "Industry", "Citizen"])
 
     trainX, testX, trainY, testY = train_test_split(
-        data.drop(["approvalStatus"], axis=1),
-        data["approvalStatus"],
+        data.drop(["Approved"], axis=1),
+        data["Approved"],
         test_size=0.2,
         random_state=42,
     )
@@ -134,14 +125,25 @@ def logistic_regression(trainX, testX, trainY, testY):
 # logistic_regression(trainX, testX, trainY, testY)
 
 
-def view_model():
+def view_model(data=data):
     with open("logistic.pkl", "rb") as f:
         clf = pickle.load(f)
     print(clf.coef_)
     print(clf.intercept_)
 
-    coefs_df = pd.DataFrame({"Features": features[:-1], "Coefficients": clf.coef_[0]})
-    sns.barplot(x="Coefficients", y="Features", data=coefs_df)
+    data = data.dropna()
+    data = pd.get_dummies(data, columns=["Ethnicity", "Industry", "Citizen"])
+    # print(data.columns[0:-1])
+
+    coefs_df = pd.DataFrame(
+        {"Features": data.columns[0:-1], "Coefficients": clf.coef_[0]}
+    )
+    sns.barplot(
+        x="Coefficients",
+        y="Features",
+        data=coefs_df,
+        order=coefs_df.sort_values("Coefficients").Features,
+    )
     plt.xlabel("Coefficient value")
     plt.ylabel("Feature")
     plt.title("Coefficients of Logistic Regression Model")
@@ -151,7 +153,20 @@ def view_model():
     return clf
 
 
-view_model()
+# view_model()
+
+
+def chi_squared(feature="Ethnicity"):
+    contingency_table = pd.crosstab(data[feature], data["Approved"])
+    print(contingency_table)
+    chi2, p, dof, expected = chi2_contingency(contingency_table)
+    print(f"Chi-squared statistic: {chi2}")
+    print(f"p-value: {p}")
+    print(f"Degrees of freedom: {dof}")
+    print(f"Expected frequencies:\n{expected}")
+
+
+# chi_squared()
 
 # train a random forest classifier
 # clf = RandomForestClassifier(n_estimators=100, random_state=42)
