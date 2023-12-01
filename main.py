@@ -92,12 +92,10 @@ def eda(data):
     plt.show()
 
 
-eda(data)
+# eda(data)
 
 
 def data_prep(data):
-    data = data.replace("?", np.nan)
-    data["Age"] = data["Age"].astype(float)
     # drop rows with missing values
     data = data.dropna()
 
@@ -118,7 +116,7 @@ def data_prep(data):
     return trainX, testX, trainY, testY
 
 
-# trainX, testX, trainY, testY = data_prep(data)
+trainX, testX, trainY, testY = data_prep(data)
 
 
 def logistic_regression(trainX, testX, trainY, testY):
@@ -132,7 +130,7 @@ def logistic_regression(trainX, testX, trainY, testY):
         pickle.dump(clf, f)
 
 
-# logistic_regression(trainX, testX, trainY, testY)
+logistic_regression(trainX, testX, trainY, testY)
 
 
 def view_model():
@@ -157,7 +155,7 @@ def view_model():
     return clf
 
 
-# view_model()
+view_model()
 
 
 def chi_squared(feature="Ethnicity"):
@@ -172,7 +170,7 @@ def chi_squared(feature="Ethnicity"):
     print(f"Expected frequencies:\n{expected}")
 
 
-# chi_squared()
+chi_squared()
 
 # train a random forest classifier
 # clf = RandomForestClassifier(n_estimators=100, random_state=42)
